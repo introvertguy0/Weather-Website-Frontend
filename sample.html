@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Weather App</title>
+  <style>
+    .loading-spinner {
+      display: none;
+      width: 30px;
+      height: 30px;
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #000;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      color: red;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div>
+    <input type="text" class="search-box" placeholder="Search for a city...">
+    <button class="search-btn">Search</button>
+    <div class="loading-spinner"></div>
+    <div class="error-message"></div>
+  </div>
+
+  <div class="location">
+    <div class="city"></div>
+    <div class="date"></div>
+  </div>
+
+  <div class="current">
+    <div class="temp"></div>
+    <div class="weather"></div>
+    <div class="hi-low"></div>
+  </div>
+
+  <script>
+    const api = {
+      key: "fcc8de7015bbb202209bbf0261babf4c",
+      base: "https://api.openweathermap.org/data/2.5/"
+    };
+
+    const searchBox = document.querySelector('.search-box');
+    const searchBtn = document.querySelector('.search-btn');
+    const loadingSpinner = document.querySelector('.loading-spinner');
+    const errorMessage = document.querySelector('.error-message');
+
+    searchBox.addEventListener('keypress', function (evt) {
+      if (evt.key === 'Enter') {
+        getWeather(searchBox.value);
+      }
+    });
+
+    searchBtn.addEventListener('click', function () {
+      getWeather(searchBox.value);
+    });
+
+    function getWeather(query) {
+      if (!query) return;
+      
+      showLoading(true);
+      errorMessage.innerText = '';  // Clear previous error messages
+      
+      fetch(`${api.base}weather?q=${query}&units=metric&APPID=${api.key}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("City not found");
+          }
+          return response.json();
+        })
+        .then(displayResults)
+        .catch(error => {
+          errorMessage.innerText = error.message;
+        })
+        .finally(() => {
+          showLoading(false);
+          searchBox.value = '';  // Clear search box
+        });
+    }
+
+    function displayResults(weather) {
+      document.querySelector('.location .city').innerText = `${weather.name}, ${weather.sys.country}`;
+      document.querySelector('.location .date').innerText = dateBuilder(new Date());
+      document.querySelector('.current .temp').innerHTML = `${Math.round(weather.main.temp)}<span>°c</span>`;
+      document.querySelector('.current .weather').innerText = weather.weather[0].main;
+      document.querySelector('.hi-low').innerText = `${Math.round(weather.main.temp_min)}°c / ${Math.round(weather.main.temp_max)}°c`;
+    }
+
+    function dateBuilder(d) {
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    function showLoading(isLoading) {
+      loadingSpinner.style.display = isLoading ? 'inline-block' : 'none';
+    }
+  </script>
+</body>
+</html>
